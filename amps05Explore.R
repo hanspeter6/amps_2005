@@ -67,7 +67,7 @@ demographics_05$lsm <- ifelse(demographics_05$lsm %in% c(1,2), 1, demographics_0
 demographics_05$lsm <- ifelse(demographics_05$lsm %in% c(3,4), 2, demographics_05$lsm)
 demographics_05$lsm <- ifelse(demographics_05$lsm %in% c(5,6), 3, demographics_05$lsm)
 demographics_05$lsm <- ifelse(demographics_05$lsm %in% c(7,8), 4, demographics_05$lsm)
-demographics_05$lsm <- ifelse(demographics_05$lsm %in% c(9,05), 5, demographics_05$lsm)
+demographics_05$lsm <- ifelse(demographics_05$lsm %in% c(9,10), 5, demographics_05$lsm)
 demographics_05$lsm <- factor(demographics_05$lsm, ordered = TRUE)
 
 # demographics_05$lifestyle <- factor(demographics_05$lifestyle, ordered = FALSE) # not for 2005 yet
