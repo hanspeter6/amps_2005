@@ -399,7 +399,7 @@ media_vehicles_05 <- data.frame(cbind(qn = print_05$qn,
                                       magazines_engagement_05,
                                       radio_engagement_05,
                                       tv_engagement_05,
-                                      internet = internet_engagement_05))
+                                      internet_eng = internet_engagement_05))
 
 saveRDS(media_type_05, 'media_type_05.rds')
 saveRDS(media_vehicles_05, 'media_vehicles_05.rds')
