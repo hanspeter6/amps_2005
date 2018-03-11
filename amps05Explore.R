@@ -123,9 +123,18 @@ table(kmeans05$cluster) #
 set05 <- set05 %>%
         mutate(cluster = factor(kmeans05$cluster))
 
+# trying out idea of first pc scores as measure of media type mix...kinda engagement...think about this
+
+pc_type <- princomp(set05[,c('newspapers', 'magazines', 'tv', 'radio', 'internet')])
+screeplot(pc_type, type = "lines")
+
+set05 <- set05 %>%
+        mutate(typePC = scale(pc_type$scores[,1]))
+
 saveRDS(set05, "set05.rds")
 
 set05 <- readRDS("set05.rds")
+
 
 # consider multidimensional scaling and self organising maps on the clusters :
 
