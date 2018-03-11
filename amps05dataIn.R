@@ -340,10 +340,11 @@ names(tv_engagement_05) <- c("e TV",
                              "SABC 1",
                              "SABC 2",
                              "SABC 3",
-                             "Other",
+                             "Other TV",
+                             "DSTV")
+                             
                              # "Cape Town TV",
                              # "Soweto TV",
-                             "DSTV")
 
 saveRDS(tv_engagement_05, "tv_engagement_05.rds")
 
@@ -372,7 +373,7 @@ internet_level1 <- rowSums(internet_level1)
 #                           'int_news')
 
 ## create single dataframe for internet multiplying internet_level1 with sum of internet_level2:
-internet_engagement_05 <- internet_level1#  * internet_level2
+internet_engagement_05 <- internet_level1 #  * internet_level2
 
 saveRDS(internet_engagement_05, "internet_engagement_05.rds")
 

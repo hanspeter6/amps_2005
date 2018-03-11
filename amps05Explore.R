@@ -124,7 +124,7 @@ set05 <- set05 %>%
         mutate(cluster = factor(kmeans05$cluster))
 
 # trying out idea of first pc scores as measure of media type mix...kinda engagement...think about this
-
+set.seed(123)
 pc_type <- princomp(set05[,c('newspapers', 'magazines', 'tv', 'radio', 'internet')])
 screeplot(pc_type, type = "lines")
 
