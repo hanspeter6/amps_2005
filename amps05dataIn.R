@@ -347,11 +347,11 @@ internet_engagement_05 <- readRDS("internet_engagement_05.rds")
 
 # Level 1: Type
 media_type_05 <- data.frame(cbind(qn = print_05$qn,
-                                  scale(rowSums(newspapers_engagement_05)),
-                                  scale(rowSums(magazines_engagement_05)),
-                                  scale(rowSums(radio_engagement_05)),
-                                  scale(rowSums(tv_engagement_05)),
-                                  scale(internet_engagement_05)))
+                                  rowSums(newspapers_engagement_05),
+                                  rowSums(magazines_engagement_05),
+                                  rowSums(radio_engagement_05),
+                                  rowSums(tv_engagement_05),
+                                  internet_engagement_05))
 names(media_type_05) <- c("qn",
                           "newspapers",
                           "magazines",
@@ -359,7 +359,7 @@ names(media_type_05) <- c("qn",
                           "tv",
                           "internet")
 media_type_05 <- media_type_05 %>%
-        mutate(all = as.vector(scale(newspapers + magazines + radio + tv + internet))) 
+        mutate(all = as.vector(newspapers + magazines + radio + tv + internet)) 
 
 
 
@@ -509,6 +509,9 @@ set05 <- demographics_05 %>%
         left_join(media_type_05) %>%
         left_join(media_vehicles_05) %>%
         filter(metro != 0)
+
+# scale media type and media vehicles
+set05[,14:193] <- scale(set05[,14:193])
 
 # save it:
 saveRDS(set05, "set05.rds")
