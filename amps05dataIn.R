@@ -32,49 +32,52 @@ load("labels_05.RData")
 
 ## 1st Print (newspapers and magazines) Media Set
 
-names_print_05 <- str_subset(print_05_labels, 'Number of different issues usually read or page through') %>%
+## ISSUES
+names_issues_print_05 <- str_subset(print_05_labels, 'Number of different issues usually read or page through') %>%
         str_replace('.+\\s-', '') %>%
         str_trim()
-View(names_print_05)
+vars_issues_print_05 <- str_subset(print_05_labels, 'Number of different issues usually read or page through') %>%
+        str_replace('Number\\sof\\sdifferent.+', '') %>%
+        str_trim()
 
-check_10 <- readRDS("names_print_10.rds")
-View(check_10)
+##Newspapers
+# fix names and get rid of some and save
+names_newspapers_05_issues <- names_issues_print_05[c(1:42)]
+# fix(names_newspapers_05_issues)
+# saveRDS(names_newspapers_05_issues, "names_newspapers_05_issues.rds")
+names_newspapers_05_issues <- readRDS("names_newspapers_05_issues.rds")
 
-fix(names_print_05)
-saveRDS(names_print_05, "names_print_05.rds")
+# vector of variables
+vars_newspapers_05_issues <- vars_issues_print_05[c(1:42)]
+issues_newspapers_05 <- print_05[,vars_newspapers_05_issues]
 
-names_print_05 <- readRDS("names_print_05.rds")
+# Magazines
+# fix names and get rid of some (including MNet guides and save
+names_magazines_05_issues <- names_issues_print_05[c(43:49,52:56,58:65,68:71,73:89,91,93:95,97:130,132)]
+# fix(names_magazines_05_issues)
+# saveRDS(names_magazines_05_issues, "names_magazines_05_issues.rds")
+names_magazines_05_issues <- readRDS("names_magazines_05_issues.rds")
 
-# create print dataset:
-issues_05 <- print_05[,str_detect(names(print_05), 'ca[34568]co\\d{2}')]
-names(issues_05) <- names_print_05
+# vector of variables
+vars_magazines_05_issues <- vars_issues_print_05[c(43:49,52:56,58:65,68:71,73:89,91,93:95,97:130,132)]
+issues_magazines_05 <- print_05[,vars_magazines_05_issues]
 
+# create datasets ...for newspapers and magazines:
+newspapers_engagement_05 <- issues_newspapers_05
+names(newspapers_engagement_05) <- names_newspapers_05_issues
+magazines_engagement_05 <- issues_magazines_05
+names(magazines_engagement_05) <- names_magazines_05_issues
 
-saveRDS(issues_05, "issues_05.rds")
-# 
-# thorough_05 <- print_05[,str_detect(names(print_05), 'ca((34)|(35)|(36)|(37)|(38)|(39))co\\d{2}')]
-# thorough_05 <- thorough_05[,-which(names(thorough_05) == 'ca38co50'| names(thorough_05) == 'ca38co51')] # get rid of six-week mags (zigzag and saltwater girl) not in issues
-# 
-# names(thorough_05) <- names_print_05
-# 
-# # # need to reverse numbering to serve as weights (see value_lables text file):
-# thorough_05 <- 7 - thorough_05
-# 
-# saveRDS(thorough_05, "thorough_05.rds")
-# # create single print dataset:
+# # # replace NAs with zeros
+newspapers_engagement_05[is.na(newspapers_engagement_05)] <- 0
+magazines_engagement_05[is.na(magazines_engagement_05)] <- 0
 
-print_engagement_05 <- issues_05 # * thorough_05
+# CLEAN UP
+# for newspapers: nothing
 
-# replace nas with zero's:
-print_engagement_05[is.na(print_engagement_05)] <- 0
+# for magazines - deal with it in vehicle_cleaning project
 
-saveRDS(print_engagement_05, "print_engagement_05.rds")
-
-print_engagement_05 <- readRDS("print_engagement_05.rds")
-
-newspapers_engagement_05 <- print_engagement_05[,1:42]
-magazines_engagement_05 <- print_engagement_05[,43:133]
-
+# save themn
 saveRDS(newspapers_engagement_05, "newspapers_engagement_05.rds")
 saveRDS(magazines_engagement_05, "magazines_engagement_05.rds")
 
@@ -177,8 +180,6 @@ check_tv_names_12 <- readRDS("names_tv_10.rds")
 
 # want to isolate only past 4 weeks (no DSTV yet)
 tv4weeks_05 <- electr_05[,c('ca39co9_1', # "e TV"
-                            'ca39co9_2', # "MNet Main" 
-                            'ca39co9_3', # "MNet Community"
                             'ca39co9_4', # "SABC 1"
                             'ca39co9_5', # "SABC 2"
                             'ca39co9_6', # "SABC 3"
@@ -189,8 +190,6 @@ tv4weeks_05 <- electr_05[,c('ca39co9_1', # "e TV"
 
 # want to isolate only past 7 days...(no DSTV yet)
 tv7days_05 <- electr_05[,c('ca39co19_1', # "e TV"
-                           'ca39co19_2', # "MNet Main" 
-                           'ca39co19_3', # "MNet Community"
                            'ca39co19_4', # "SABC 1"
                            'ca39co19_5', # "SABC 2"
                            'ca39co19_6', # "SABC 3"
@@ -201,8 +200,6 @@ tv7days_05 <- electr_05[,c('ca39co19_1', # "e TV"
 
 # want to isolate only yesterday...(no DSTV yet)
 tvYesterday_05 <- electr_05[,c('ca39co29_1', # "e TV"
-                               'ca39co29_2', # "MNet Main" 
-                               'ca39co29_3', # "MNet Community"
                                'ca39co29_4', # "SABC 1"
                                'ca39co29_5', # "SABC 2"
                                'ca39co29_6', # "SABC 3"
@@ -298,9 +295,7 @@ tv_engagement_05 <- tv4weeks_05 + tv7days_05 + tvYesterday_05
 tv_engagement_05 <- tv_engagement_05 %>%
         mutate(DSTV = dstv_05)
 
-names(tv_engagement_05) <- c("e TV",
-                             "MNet Main",
-                             "MNet Community",
+names(tv_engagement_05) <- c("e tv",
                              "SABC 1",
                              "SABC 2",
                              "SABC 3",
@@ -511,7 +506,7 @@ set05 <- demographics_05 %>%
         filter(metro != 0)
 
 # scale media type and media vehicles
-set05[,14:193] <- scale(set05[,14:193])
+set05[,14:182] <- scale(set05[,14:182])
 
 # save it:
 saveRDS(set05, "set05.rds")
