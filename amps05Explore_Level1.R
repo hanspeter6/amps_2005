@@ -22,7 +22,7 @@ set05 <- readRDS("set05.rds")
 
 # consider some correlations
 
-png('corTypePlot2005.png')
+jpeg('corTypePlot2005.jpeg')
 corrplot(cor(set05[,c("newspapers","magazines","radio", "tv", "internet")]),
          method = "pie",
          order = "hclust",
@@ -47,28 +47,29 @@ png('kmeansTypePlot2005.png')
 plot(c(1,2,3,4,5,6), wss, type = "b", xlab = "k-values", ylab = "total within sum of squares" )
 dev.off()
 
-set.seed(56)
+set.seed(123)
 kmeans05 <- kmeans(set05[,c("newspapers","magazines","radio", "tv", "internet", "all")],
                    centers = 4,
-                   nstart = 20,
-                   iter.max = 20)
+                   nstart = 5,
+                   iter.max = 100)
 table(kmeans05$cluster) #
 
 # Comparing 2005 with 2008... will change colours if necessary to reflect meaning based on 2012:
 
-# red becomes lilac:  1 becomes 4
-# green becomes blue: 2 becomes 3
-# blue becomes red:   3 becomes 1
-# lilac becomes green: 4 stays 2
-kmeans05$cluster <- ifelse(kmeans05$cluster == 1, 9, kmeans05$cluster)
-kmeans05$cluster <- ifelse(kmeans05$cluster == 2, 8, kmeans05$cluster)
+# lilac stays lilac:  4 -> 4
+# green stays green: 2 -> 2
+# red becomes blue:   1 -> 3
+# blue becomes red: 3 -> 1
+kmeans05$cluster <- ifelse(kmeans05$cluster == 1, 8, kmeans05$cluster)
+kmeans05$cluster <- ifelse(kmeans05$cluster == 2, 7, kmeans05$cluster)
 kmeans05$cluster <- ifelse(kmeans05$cluster == 3, 6, kmeans05$cluster)
-kmeans05$cluster <- ifelse(kmeans05$cluster == 4, 7, kmeans05$cluster)
+kmeans05$cluster <- ifelse(kmeans05$cluster == 4, 9, kmeans05$cluster)
 kmeans05$cluster <- kmeans05$cluster - 5
 
 # add cluster labels to the dataset
 set05c <- set05 %>%
-        mutate(cluster = factor(kmeans05$cluster))
+        mutate(cluster = factor(kmeans05$cluster)) %>%
+        dplyr::select(qn, pwgt, cluster, everything())
 saveRDS(set05c, "set05c.rds")
 
 # some plots
