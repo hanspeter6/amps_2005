@@ -1,6 +1,7 @@
 # libraries
 library(stringr)
 library(tidyverse)
+library(caret)
 
 print_05 <- read.csv("/Users/HansPeter/Dropbox/Statistics/UCTDataScience/Thesis/amps_2005/csv/amps-2005-newspaper-magazine-readership-v1.1.csv")
 electr_05 <- read.csv("/Users/HansPeter/Dropbox/Statistics/UCTDataScience/Thesis/amps_2005/csv/amps-2005-electronic-media-v1.1.csv")
@@ -62,7 +63,7 @@ names_magazines_05_issues <- readRDS("names_magazines_05_issues.rds")
 vars_magazines_05_issues <- vars_issues_print_05[c(43:49,52:56,58:65,68:71,73:89,91,93:95,97:130,132)]
 issues_magazines_05 <- print_05[,vars_magazines_05_issues]
 
-# create datasets ...for newspapers and magazines:
+# create datasets ...for newspapers and magazines:SAME FOR SIMPLE ...
 newspapers_engagement_05_all <- issues_newspapers_05
 names(newspapers_engagement_05_all) <- names_newspapers_05_issues
 magazines_engagement_05_all <- issues_magazines_05
@@ -89,16 +90,22 @@ saveRDS(magazines_engagement_05_simple_all, "magazines_engagement_05_simple_all.
 # CLEAN UP (for now not "simple" versions)
 # for newspapers: nothing
 newspapers_engagement_05 <- newspapers_engagement_05_all
+newspapers_engagement_05_simple <- newspapers_engagement_05_simple_all
 
 # for magazines - deal with it in vehicle_cleaning project
 magazines_engagement_05 <- readRDS("/Users/HansPeter/Dropbox/Statistics/UCTDataScience/Thesis/vehicle_cleaning/magazines_engagement_05.rds")
+magazines_engagement_05_simple <- readRDS("/Users/HansPeter/Dropbox/Statistics/UCTDataScience/Thesis/vehicle_cleaning/magazines_engagement_05_simple.rds")
 
-# save them
+# save them in this project
 saveRDS(newspapers_engagement_05, "newspapers_engagement_05.rds")
 saveRDS(magazines_engagement_05, "magazines_engagement_05.rds")
+saveRDS(newspapers_engagement_05_simple, "newspapers_engagement_05_simple.rds")
+saveRDS(magazines_engagement_05_simple, "magazines_engagement_05_simple.rds")
 
 magazines_engagement_05 <- readRDS("magazines_engagement_05.rds")
 newspapers_engagement_05 <- readRDS("newspapers_engagement_05.rds")
+magazines_engagement_05_simple <- readRDS("magazines_engagement_05_simple.rds")
+newspapers_engagement_05_simple <- readRDS("newspapers_engagement_05_simple.rds")
 
 ## 2nd Electronic Media Set
 # # RADIO
@@ -365,6 +372,21 @@ media_type_05 <- media_type_05 %>%
         mutate(all = as.vector(newspapers + magazines + radio + tv + internet)) 
 
 
+media_type_05_simple <- data.frame(cbind(qn = print_05$qn,
+                                  rowSums(newspapers_engagement_05_simple),
+                                  rowSums(magazines_engagement_05_simple),
+                                  rowSums(radio_engagement_05),
+                                  rowSums(tv_engagement_05),
+                                  internet_engagement_05))
+names(media_type_05_simple) <- c("qn",
+                          "newspapers",
+                          "magazines",
+                          "radio",
+                          "tv",
+                          "internet")
+media_type_05_simple <- media_type_05_simple %>%
+        mutate(all = as.vector(newspapers + magazines + radio + tv + internet)) 
+
 
 # Level 2: Vehicles
 media_vehicles_05 <- data.frame(cbind(qn = print_05$qn,
@@ -374,11 +396,22 @@ media_vehicles_05 <- data.frame(cbind(qn = print_05$qn,
                                       tv_engagement_05,
                                       internet_eng = internet_engagement_05))
 
+media_vehicles_05_simple <- data.frame(cbind(qn = print_05$qn,
+                                      newspapers_engagement_05_simple,
+                                      magazines_engagement_05_simple,
+                                      radio_engagement_05,
+                                      tv_engagement_05,
+                                      internet_eng = internet_engagement_05))
+
 saveRDS(media_type_05, 'media_type_05.rds')
 saveRDS(media_vehicles_05, 'media_vehicles_05.rds')
+saveRDS(media_type_05_simple, 'media_type_05_simple.rds')
+saveRDS(media_vehicles_05_simple, 'media_vehicles_05_simple.rds')
 
-media_type_05 <- readRDS("media_type_05.rds")
-media_vehicles_05 <- readRDS("media_vehicles_05.rds")
+media_type_05.rds <- readRDS('media_type_05.rds')
+media_vehicles_05 <- readRDS('media_vehicles_05.rds')
+media_type_05_simple <- readRDS('media_type_05_simple.rds')
+media_vehicles_05_simple <- readRDS('media_vehicles_05_simple.rds')
 
 ## 4th Demographics Set (see notes for descriptions)
 age <- personal_05[,'ca47co38']
@@ -512,43 +545,27 @@ set05 <- demographics_05 %>%
         left_join(media_type_05) %>%
         left_join(media_vehicles_05) %>%
         filter(metro != 0)
+set05_simple <- demographics_05 %>%
+        left_join(media_type_05_simple) %>%
+        left_join(media_vehicles_05_simple) %>%
+        filter(metro != 0)
+
+# get rid of zero variances:
+ind_05 <- nearZeroVar(set05[,14:ncol(set05)], saveMetrics = TRUE)
+good_set <- set05[,14:ncol(set05)][,!ind_05$zeroVar]
+set05 <- data.frame(cbind(set05[,1:13], good_set))
+
+ind_05_simple <- nearZeroVar(set05_simple[,14:ncol(set05_simple)], saveMetrics = TRUE)
+good_set_simple <- set05_simple[,14:ncol(set05_simple)][,!ind_05_simple$zeroVar]
+set05_simple <- data.frame(cbind(set05_simple[,1:13], good_set_simple))
 
 # scale media type and media vehicles
 set05[,14:ncol(set05)] <- scale(set05[,14:ncol(set05)])
+set05_simple[,14:ncol(set05_simple)] <- scale(set05_simple[,14:ncol(set05_simple)])
 
 # save it:
 saveRDS(set05, "set05.rds")
+saveRDS(set05_simple, "set05_simple.rds")
 
-# creating a national products only set:
 
-# national list:
-nationals <- c("Business.Day",
-               "Daily.Sun",
-               "Mail.n.Guardian",
-               "Rapport",
-               "The.Sunday.Independent",
-               "Sunday.Times",
-               "Soccer.Laduma",
-               "Drum",
-               "Huisgenoot",
-               "You",
-               "Kickoff",
-               "Bona",
-               "Car",
-               "Cosmopolitan",
-               "FHM",
-               "Getaway",
-               "Sarie",
-               "Topcar",
-               "other.mags",
-               "X5FM",
-               "Metro.FM",
-               "RSG",
-               "e.tv",
-               "SABC.1",
-               "SABC.2",
-               "SABC.3",
-               "DSTV",
-               "internet_eng")
-
-set05_nat <- set05[,which(names(set05) %in% nationals)]
+#
