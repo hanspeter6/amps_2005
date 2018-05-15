@@ -1,28 +1,20 @@
-# libraries
-library(stringr)
+# # loading packages
 library(tidyverse)
 library(corrplot)
 library(rpart)
 library(rpart.plot)
-library(scatterplot3d)
-library(rgl)
-library(kohonen)
+# library(scatterplot3d)
+# library(rgl)
 library(caret)
 library(randomForest)
 library(MASS)
-library(CCA)
-library(nFactors)
-library(FactoMineR)
-library(factoextra)
 library(gridExtra)
 library(ggplot2)
 
-#  read in dataset
+#  read in datasets
 set05 <- readRDS("set05.rds")
-set05_simple <- readRDS("set05_simple.rds")
 
 # consider some correlations
-
 jpeg('corTypePlot2005.jpeg')
 corrplot(cor(set05[,c("newspapers","magazines","radio", "tv", "internet")]),
          method = "pie",
@@ -36,194 +28,153 @@ dev.off()
 
 ## consider kmeans
 wss <- vector()
+set.seed(123)
 for(k in c(1,2,3,4,5,6)) {
-        temp <- kmeans(set05[,c("newspapers","magazines","radio", "tv", "internet")],
+        temp <- kmeans(set05[,c("newspapers","magazines","radio", "tv", "internet", "all")],
                        centers = k,
-                       nstart = 3,
-                       iter.max = 20)
+                       nstart = 5,
+                       iter.max = 30)
         wss <- append(wss,temp$tot.withinss)
 }
 
-png('kmeansTypePlot2005.png')
+jpeg('kmeansTypePlot2005.jpeg')
 plot(c(1,2,3,4,5,6), wss, type = "b", xlab = "k-values", ylab = "total within sum of squares" )
 dev.off()
 
 set.seed(123)
-kmeans05 <- kmeans(set05[,c("newspapers","magazines","radio", "tv", "internet", "all")],
+kmeans05 <- kmeans(set05[,c("newspapers","magazines","radio", "tv", "internet","all")],
                    centers = 4,
                    nstart = 5,
                    iter.max = 100)
-set.seed(123)
-kmeans05_simple <- kmeans(set05_simple[,c("newspapers","magazines","radio", "tv", "internet", "all")],
-                          centers = 4,
-                          nstart = 5,
-                          iter.max = 100)
 
-# Comparing 2005 with 2008... will change colours if necessary to reflect meaning based on 2012:
+table(kmeans05$cluster)
 
-# lilac to green:  4 -> 2
-# green to lilac: 2 -> 4
-# red to blue:   1 -> 3
-# blue to red: 3 -> 1
-kmeans05_simple$cluster <- ifelse(kmeans05_simple$cluster == 1, 8, kmeans05_simple$cluster)
-kmeans05_simple$cluster <- ifelse(kmeans05_simple$cluster == 2, 9, kmeans05_simple$cluster)
-kmeans05_simple$cluster <- ifelse(kmeans05_simple$cluster == 3, 6, kmeans05_simple$cluster)
-kmeans05_simple$cluster <- ifelse(kmeans05_simple$cluster == 4, 7, kmeans05_simple$cluster)
-kmeans05_simple$cluster <- kmeans05_simple$cluster - 5
+# align with interpretation of 2012....
+# green to green:  2 to 2
+# lilac to blue: 4 to 3
+# blue to lilac: 3 to 4
+# red to red: 1 to 1
+kmeans05$cluster <- ifelse(kmeans05$cluster == 1, 6, kmeans05$cluster)
+kmeans05$cluster <- ifelse(kmeans05$cluster == 2, 7, kmeans05$cluster)
+kmeans05$cluster <- ifelse(kmeans05$cluster == 3, 9, kmeans05$cluster)
+kmeans05$cluster <- ifelse(kmeans05$cluster == 4, 8, kmeans05$cluster)
+kmeans05$cluster <- kmeans05$cluster - 5
 
 # add cluster labels to the dataset
 set05c <- set05 %>%
         mutate(cluster = factor(kmeans05$cluster)) %>%
         dplyr::select(qn, pwgt, cluster, everything())
-set05c_simple <- set05_simple %>%
-        mutate(cluster = factor(kmeans05_simple$cluster)) %>%
-        dplyr::select(qn, pwgt, cluster, everything())
 
+# save them
 saveRDS(set05c, "set05c.rds")
-saveRDS(set05c_simple, "set05c_simple.rds")
-
+# read back
 set05c <- readRDS("set05c.rds")
-set05c_simple <- readRDS("set05c_simple.rds")
 
-# some plots
+## some plots for simple version to use in longitudinal stuff later...
 # boxplots of clusters and media types
-p1 <- ggplot(set05c_simple, aes(cluster, all, fill = cluster)) +
-        geom_boxplot() +
-        guides(fill = FALSE) +
-        labs(title = "all")
-p2 <- ggplot(set05c_simple, aes(cluster, newspapers, fill = cluster)) +
-        geom_boxplot() +
-        guides(fill = FALSE) +
-        labs(title = "newspapers")
-p3 <- ggplot(set05c_simple, aes(cluster, magazines, fill = cluster)) +
-        geom_boxplot() +
-        guides(fill = FALSE) +
-        labs(title = "magazines")
-p4 <- ggplot(set05c_simple, aes(cluster, radio, fill = cluster)) +
-        geom_boxplot() +
-        guides(fill = FALSE) +
-        labs(title = "radio")
-p5 <- ggplot(set05c_simple, aes(cluster, tv, fill = cluster)) +
-        geom_boxplot() +
-        guides(fill = FALSE) +
-        labs(title = "tv")
-p6 <- ggplot(set05c_simple, aes(cluster, internet, fill = cluster)) +
-        geom_boxplot() +
-        guides(fill = FALSE) +
-        labs(title = "internet")
 
-jpeg('typeBoxPlots_05_simple.jpeg', quality = 100, type = "cairo")
-grid.arrange(p1, p2, p3, p4, p5,p6,  ncol=3, nrow = 2)
+boxplot <- function(set,type) {
+        ggplot(set, aes_string("cluster", type, fill = "cluster")) +
+                geom_boxplot() +
+                guides(fill = FALSE) +
+                labs(title = type)
+}
+
+jpeg('typeBoxPlots_05.jpeg', quality = 100, type = "cairo")
+grid.arrange(boxplot(set05c, type = "all"),
+             boxplot(set05c, type = "newspapers"),
+             boxplot(set05c, type = "magazines"),
+             boxplot(set05c, type = "radio"),
+             boxplot(set05c, type = "tv"),
+             boxplot(set05c, type = "internet"),
+             ncol=3, nrow = 2)
 dev.off()
 
 # try to make sense of demographics
-d1 <- ggplot(set05c_simple, aes(race, cluster, fill = cluster)) +
-        geom_col() +
-        labs(title = "race", y = "", x = "") +
-        scale_x_discrete(labels=c("black", "coloured", "indian", "white"))
-d2 <- ggplot(set05c_simple, aes(edu, cluster, fill = cluster)) +
-        geom_col() +
-        labs(title = "education", y = "", x = "") +
-        scale_x_discrete(labels=c("<matric", "matric",">matric"))
-d3 <- ggplot(set05c_simple, aes(age, cluster, fill = cluster)) +
-        geom_col() +
-        labs(title = "age", y = "", x = "") +
-        scale_x_discrete(labels=c("15-24","25-44", "45-54","55+"))
-d4 <- ggplot(set05c_simple, aes(lsm, cluster, fill = cluster)) +
-        geom_col() +
-        labs(title = "lsm", y = "", x = "") +
-        scale_x_discrete(labels=c("1-2", "3-4", "5-6", "7-8", "9-10"))
 
-jpeg('typeDemogPlots1_05_simple.jpeg', quality = 100, type = "cairo")
-grid.arrange(d1, d2, d3, d4, ncol=2, nrow = 2)
+# size of each cluster
+ggplot(data = set05c, aes(x = cluster, fill = cluster)) +
+        geom_bar(stat = "count") +
+        guides(fill = FALSE)
+
+# demographics by cluster
+
+bars_by_cluster <- function(set, category) { # category:one of race, edu, age, lsm, sex, hh_inc
+        if(category == "race") {
+                level = c("black", "coloured", "indian", "white")
+                title = "Population Group 2005"
+        }
+        if(category == "edu") {
+                level = c(c("<matric", "matric",">matric"))
+                title = "Education Level 2005"
+        }
+        if(category == "age") {
+                level = c(c("15-24","25-44", "45-54","55+"))
+                title = "Age Group 2005"
+        }
+        if(category == "lsm") {
+                level = c("1-2", "3-4", "5-6", "7-8", "9-10")
+                title = "LSM 2005"
+        }
+        if(category == "sex") {
+                level = c("male", "female")
+                title = "Gender 2005"
+        }
+        if(category == "hh_inc") {
+                level = c("<5000","5000-10999","11000-19999",">=20000")
+                title = "Household Income 2005"
+        }
+        
+        ggplot(data = set05c, aes_string(x = "cluster", fill = category)) +
+                geom_bar(stat = "count", position = position_dodge()) +
+                scale_fill_discrete(labels=level) +
+                labs(title = title) +
+                guides(fill=guide_legend(title=NULL)) 
+}
+
+jpeg('typeDemogPlots_05.jpeg', quality = 100, type = "cairo")
+grid.arrange(bars_by_cluster(set05c, "sex"),
+             bars_by_cluster(set05c, "age"),
+             bars_by_cluster(set05c, "race"),
+             bars_by_cluster(set05c, "edu"),
+             bars_by_cluster(set05c, "hh_inc"),
+             bars_by_cluster(set05c, "lsm"),
+             ncol=2, nrow = 3)
 dev.off()
-
-d5 <- ggplot(set05c_simple, aes(sex, cluster, fill = cluster)) +
-        geom_col() +
-        labs(title = "gender", y = "", x = "") +
-        scale_x_discrete(labels=c("male", "female"))
-d6 <- ggplot(set05c_simple, aes(hh_inc, cluster, fill = cluster)) +
-        geom_col() +
-        labs(title = "household income", y = "", x = "") +
-        scale_x_discrete(labels=c("<5000","5000-10999","11000-19999",">=20000"))
-d7 <- ggplot(set05c_simple, aes(lifestages, cluster, fill = cluster)) +
-        geom_col() +
-        labs(title = "lifestages", y = "", x = "")# +
-# scale_x_discrete(labels=c("<5000","5000-10999","11000-19999",">=20000"))
-# d8 <- ggplot(set05c_simple, aes(lifestyle, cluster, fill = cluster)) +
-#         geom_col() +
-#         labs(title = "lifestyle", y = "", x = "")# +
-# scale_x_discrete(labels=c("<5000","5000-10999","11000-19999",">=20000"))
-jpeg('typeDemogPlots2_05_simple.jpeg', quality = 100, type = "cairo")
-grid.arrange(d5, d6, d7, ncol=2, nrow = 2)
-dev.off()
-
-
-
 
 # consider multidimensional scaling and self organising maps on the clusters :
 
 # 1st create a subset to ensure easier running
 set.seed(56)
-sub05 <- set05[sample(nrow(set05), size = 0500),]
+sub05 <- set05c[sample(nrow(set05c), size = 1000),]
 
 # distance matrix and MDS
-sub05_dist <- dist(sub05[,c("newspapers","magazines","radio", "tv", "internet")])
+sub05_dist <- dist(sub05[,c("newspapers","magazines","radio", "tv", "internet", "all")])
 mds05 <- cmdscale(sub05_dist)
 plot(mds05, col = as.numeric(sub05$cluster) + 1, pch = 19, ylab = "", xlab = "")
 
 # 3D scaling
-mds3 <- cmdscale(dist(sub05[,c("newspapers", "magazines", "radio", "tv", "internet")]), k = 3)
+mds3 <- cmdscale(dist(sub05[,c("newspapers", "magazines", "radio", "tv", "internet", "all")]), k = 3)
 mds3 <- as.data.frame(mds3)
 
-# 2D & 3D Scatterplots of 5 centers
+# 2D Scatterplots of 4 cente
+
+# setting colours
+cols <- as.numeric(sub05$cluster) + 1
+cols <- ifelse(cols == 5, 6, cols)
+
 jpeg('kmeans2DPlot2005.jpeg')
-plot(mds05, col = as.numeric(sub05$cluster) + 1, ylab = "", xlab = "", pch = 19)
+plot(mds05, col = cols, ylab = "", xlab = "", pch = 19)
 dev.off()
-
-jpeg('kmeans3DPlot2005.jpeg')
-scatterplot3d(mds3, color = as.numeric(sub05$cluster) + 1, xlab = '', ylab = '', zlab = '')
-dev.off()
-
-# Spinning 3D for 5 classes
-jpeg('kmeansSpinningPlot2005.png')
-plot3d(jitter(mds3$V1), jitter(mds3$V2), jitter(mds3$V3), col= as.numeric(sub05$cluster) + 1, size=5, xlab = '', ylab = '', zlab = '', pch = 19)
-dev.off()
-
-# try some Self Organising Maps.... try to explain the differences....
-
-# set up somgrid
-grid <- somgrid(xdim = 05, ydim = 05, topo = "hexagonal")
-
-# run som
-# set up as data matrix
-mat_sub <- as.matrix(sub05[,c('newspapers', 'magazines', 'radio', 'tv','internet')])
-som_sub <- som(mat_sub, grid = grid, rlen = 05000) 
-
-par(mfrow = c(1,1))
-plot(som_sub, type = "codes")
-plot(som_sub, type = "changes")
-plot(som_sub, type = "counts")
-plot(som_sub, type = "dist.neighbours")
-plot(som_sub, type = "quality")
-
-par(mfrow = c(3,2))
-plot(som_sub, type = "property", property = as.data.frame(som_sub$codes)[,1], main = names(sub05['newspapers']))
-plot(som_sub, type = "property", property = as.data.frame(som_sub$codes)[,2], main = names(sub05['magazines']))
-plot(som_sub, type = "property", property = as.data.frame(som_sub$codes)[,3], main = names(sub05['radio']))
-plot(som_sub, type = "property", property = as.data.frame(som_sub$codes)[,4], main = names(sub05['tv']))
-plot(som_sub, type = "property", property = as.data.frame(som_sub$codes)[,5], main = names(sub05['internet']))
-
-par(mfrow = c(1,1))
-plot(som_sub, type = "mapping", bgcol = sub05$cluster ) # not very good organising??
+# 
 
 # consider for some predictions:
 # create training and test sets:
 
 set.seed(56)
-ind_train <- createDataPartition(set05$cluster, p = 0.7, list = FALSE)
-training <- set05[ind_train,]
-testing <- set05[-ind_train,]
+ind_train <- createDataPartition(set05c$cluster, p = 0.7, list = FALSE)
+training <- set05c[ind_train,]
+testing <- set05c[-ind_train,]
 
 # # using random forest:
 forest05_type <- randomForest(cluster ~ newspapers
@@ -248,7 +199,7 @@ lda05 <- lda(cluster ~ newspapers
 summary(lda05)
 
 pred_lda05 <- predict(lda05, newdata = testing)
-confusionMatrix(pred_lda05$class, testing$cluster) # 
+confusionMatrix(pred_lda05$class, testing$cluster) # collinearity meant took out 
 
 # using only demographic information
 forest05_demogr <- randomForest(cluster ~ age
@@ -256,12 +207,7 @@ forest05_demogr <- randomForest(cluster ~ age
                                 + edu
                                 + hh_inc
                                 + race
-                                + lang
-                                + lifestages
-                                + mar_status
-                                + lsm
-                                + lifestyle
-                                + attitudes,
+                                + lsm,
                                 data = training)
 
 pred_forest05_demogr <- predict(forest05_demogr, newdata = testing)
@@ -275,12 +221,7 @@ lda05_demogr <- lda(cluster ~ age
                     + edu
                     + hh_inc
                     + race
-                    + lang
-                    + lifestages
-                    + mar_status
-                    + lsm
-                    + lifestyle
-                    + attitudes,
+                    + lsm,
                     data = training)
 
 pred_lda05_demogr <- predict(lda05_demogr, newdata = testing)
@@ -288,10 +229,10 @@ confusionMatrix(pred_lda05_demogr$class, testing$cluster)
 
 ##  some qualitative consideration of the four types:
 
-# consider a single tree partitioning to try to add meaning to the six clusters
-control <- rpart.control(maxdepth = 4, cp = 0.001)
+# consider a single tree partitioning to try to add meaning to the four clusters
+control <- rpart.control(maxdepth = 3, cp = 0.001)
 tree05 <- rpart(cluster ~ newspapers + tv + radio + magazines + internet, 
-                data = set05,
+                data = set05c,
                 control = control) # weights = pwgt
 par(mfrow = c(1,1))
 plot(tree05, uniform = TRUE, margin = 0.2)
@@ -299,33 +240,3 @@ text(tree05, pretty = 0, cex = 0.8)
 
 # for more detail
 rpart.plot(tree05, type = 4, extra = 1, cex = 0.5)
-
-percentile <- ecdf(set05$internet)
-percentile(1.4)
-
-# some plots
-jpeg('typeBoxPlots_05.jpeg', quality = 100, type = "cairo")
-par(mfrow = c(2,3))
-plot(set05$radio ~ set05$cluster, col = c(2,3,4,6), main = "radio", xlab = "cluster", ylab = '')
-plot(set05$tv ~ set05$cluster, col = c(2,3,4,6), main = "tv", xlab = "cluster", ylab = '')
-plot(set05$newspapers ~ set05$cluster, col = c(2,3,4,6), main = "newspapers", xlab = "cluster", ylab = '')
-plot(set05$magazines ~ set05$cluster, col = c(2,3,4,6), main = "magazines", xlab = "cluster", ylab = '')
-plot(set05$internet ~ set05$cluster, col = c(2,3,4,6), main = "internet", xlab = "cluster", ylab = '')
-plot(set05$all ~ set05$cluster, col = c(2,3,4,6), main = "all", xlab = "cluster", ylab = '')
-dev.off()
-
-# try to make sense of demographics
-jpeg('typeDemogPlots1_05.jpeg', quality = 100, type = "cairo")
-par(mfrow = c(2,2))
-plot(set05$cluster ~ factor(set05$race,labels = c("black", "coloured", "indian", "white")), col = c(2,3,4,6), main = "race", xlab = "", ylab = "")
-plot(set05$cluster ~ factor(set05$edu, labels = c("<matric", "matric",">matric" )), col = c(2,3,4,6), main = "education", xlab = "", ylab = "")
-plot(set05$cluster ~ factor(set05$age, labels = c("15-24","25-44", "45-54","55+")), col = c(2,3,4,6), main = "age", xlab = "", ylab = "")
-plot(set05$cluster ~ factor(set05$lsm, labels = c("1-2", "3-4", "5-6", "7-8", "9-05")), col = c(2,3,4,6), main = "LSM", xlab = "", ylab = "")
-dev.off()
-
-jpeg('typeDemogPlots2_05.jpeg', quality = 100, type = "cairo")
-par(mfrow = c(2,2))
-plot(set05$cluster ~ factor(set05$sex, labels = c("male", "female")), col = c(2,3,4,6), main = "sex", xlab = "", ylab = "")
-plot(set05$cluster ~ factor(set05$hh_inc, labels = c("<2500","2500-6999","7000-11999",">=12000")), col = c(2,3,4,6), main = "hh_inc", xlab = "", ylab = "")
-plot(set05$cluster ~ set05$lifestages, col = c(2,3,4,6), main = "lifestages", xlab = "", ylab = "")
-dev.off()

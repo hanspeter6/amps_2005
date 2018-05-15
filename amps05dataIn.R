@@ -180,6 +180,9 @@ radio_engagement_05_all <- readRDS("radio_engagement_05_all.rds")
 # AFTER CLEANING (see vehicle cleaning project)
 radio_engagement_05 <- readRDS("/Users/HansPeter/Dropbox/Statistics/UCTDataScience/Thesis/vehicle_cleaning/radio_engagement_05.rds")
 
+# save in this space
+saveRDS(radio_engagement_05, "radio_engagement_05.rds")
+
 ## TV
 
 # # check with 2012 names:
@@ -357,11 +360,11 @@ internet_engagement_05 <- readRDS("internet_engagement_05.rds")
 
 # Level 1: Type
 media_type_05 <- data.frame(cbind(qn = print_05$qn,
-                                  rowSums(newspapers_engagement_05),
-                                  rowSums(magazines_engagement_05),
-                                  rowSums(radio_engagement_05),
-                                  rowSums(tv_engagement_05),
-                                  internet_engagement_05))
+                                  rowSums(scale(newspapers_engagement_05)),
+                                  rowSums(scale(magazines_engagement_05)),
+                                  rowSums(scale(radio_engagement_05)),
+                                  rowSums(scale(tv_engagement_05)),
+                                  scale(internet_engagement_05)))
 names(media_type_05) <- c("qn",
                           "newspapers",
                           "magazines",
@@ -373,11 +376,11 @@ media_type_05 <- media_type_05 %>%
 
 
 media_type_05_simple <- data.frame(cbind(qn = print_05$qn,
-                                  rowSums(newspapers_engagement_05_simple),
-                                  rowSums(magazines_engagement_05_simple),
-                                  rowSums(radio_engagement_05),
-                                  rowSums(tv_engagement_05),
-                                  internet_engagement_05))
+                                  rowSums(scale(newspapers_engagement_05_simple)),
+                                  rowSums(scale(magazines_engagement_05_simple)),
+                                  rowSums(scale(radio_engagement_05)),
+                                  rowSums(scale(tv_engagement_05)),
+                                  scale(internet_engagement_05)))
 names(media_type_05_simple) <- c("qn",
                           "newspapers",
                           "magazines",
@@ -530,25 +533,34 @@ demographics_05 <- readRDS("demographics_05.rds")
 
 # read datafiles again if necessary
 magazines_engagement_05 <- readRDS("magazines_engagement_05.rds")
+magazines_engagement_05_simple <- readRDS("magazines_engagement_05_simple.rds")
+
 newspapers_engagement_05 <- readRDS("newspapers_engagement_05.rds")
+newspapers_engagement_05_simple <- readRDS("newspapers_engagement_05_simple.rds")
+
 radio_engagement_05 <- readRDS("radio_engagement_05.rds")
+
 tv_engagement_05 <- readRDS("tv_engagement_05.rds")
+
 internet_engagement_05 <- readRDS("internet_engagement_05.rds")
+# internet_engagement_05_simple <- readRDS("internet_engagement_05_simple.rds") #no simple
 
 media_type_05 <- readRDS("media_type_05.rds")
+media_type_05_simple <- readRDS("media_type_05_simple.rds")
 media_vehicles_05 <- readRDS("media_vehicles_05.rds")
+media_vehicles_05_simple <- readRDS("media_vehicles_05_simple.rds")
 
 demographics_05 <- readRDS("demographics_05.rds")
 
 # #create single dataset minus non metropolitans
 set05 <- demographics_05 %>%
         left_join(media_type_05) %>%
-        left_join(media_vehicles_05) %>%
-        filter(metro != 0)
+        left_join(media_vehicles_05)
+#%>%filter(metro != 0)
 set05_simple <- demographics_05 %>%
         left_join(media_type_05_simple) %>%
-        left_join(media_vehicles_05_simple) %>%
-        filter(metro != 0)
+        left_join(media_vehicles_05_simple)
+#%>%filter(metro != 0)
 
 # get rid of zero variances:
 ind_05 <- nearZeroVar(set05[,14:ncol(set05)], saveMetrics = TRUE)
@@ -567,5 +579,3 @@ set05_simple[,14:ncol(set05_simple)] <- scale(set05_simple[,14:ncol(set05_simple
 saveRDS(set05, "set05.rds")
 saveRDS(set05_simple, "set05_simple.rds")
 
-
-#

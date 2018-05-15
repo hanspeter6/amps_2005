@@ -4,12 +4,12 @@ library(psych)
 library(FactoMineR)
 
 # load datafiles 
-set05_min <- readRDS("/Users/HansPeter/Dropbox/Statistics/UCTDataScience/Thesis/amps_nationals/set05_min.rds")
+set05_min_simple <- readRDS("/Users/HansPeter/Dropbox/Statistics/UCTDataScience/Thesis/amps_nationals/set05_min_simple.rds")
 
 # LEVEL 2
 
 # Subsetting only on the variable I intend to use in this section:
-set05_min <- set05_min[,-c(1:2,8:12,14:19)]
+set05_min_simple <- set05_min_simple[,-c(1:2,8:12,14:19)]
 
 # ## Determine Number of Factors to Extract
 # ev <- eigen(cor(set05_min[,7:ncol(set05_min)]))
@@ -34,16 +34,16 @@ set05_min <- set05_min[,-c(1:2,8:12,14:19)]
 
 # pa method of factor analysis with oblimin rotation allowed....to try and get better estimation
 set.seed(123)
-fact_05 <- fa(set05_min[7:ncol(set05_min)], nfactors = 6, fm = "pa") # default rotation oblimin, so does allow correlation between factors
-fact_05_loadings <- fact_05$loadings
-fact_05_scores <- fact_05$scores
+fact_05_simple <- fa(set05_min_simple[7:ncol(set05_min_simple)], nfactors = 6, fm = "pa") # default rotation oblimin, so does allow correlation between factors
+fact_05_loadings_simple <- fact_05_simple$loadings
+fact_05_scores_simple <- fact_05_simple$scores
 
 # save model
-saveRDS(fact_05, "fact_05.rds")
+saveRDS(fact_05_simple, "fact_05_simple.rds")
 
 # save loadings:
-saveRDS(fact_05_loadings, "fact_05_loadings.rds")
+saveRDS(fact_05_loadings_simple, "fact_05_loadings_simple.rds")
 
 # save scores:
-saveRDS(fact_05_scores, "fact_05_scores.rds")
+saveRDS(fact_05_scores_simple, "fact_05_scores_simple.rds")
 
